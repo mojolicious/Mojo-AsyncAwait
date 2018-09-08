@@ -2,24 +2,31 @@ package Mojo::AsyncAwait;
 
 use Mojo::Base -strict;
 
+use Carp();
 use Coro ();
+use Mojo::Util;
 use Mojo::Promise;
 use Scalar::Util ();
-use Carp();
 
 use Exporter 'import';
 
 our @EXPORT = (qw/async await/);
 
 sub async {
-  my $sub = shift;
-  return sub {
+  my $sub = pop;
+  my $name = shift;
+  my $wrapped = sub {
     my @args = @_;
     Coro->new(sub{
       eval { $sub->(@args); 1 } or return $Coro::main->throw($@);
       $Coro::main->schedule_to;
     })->schedule_to;
   };
+  if ($name) {
+    my $caller = caller;
+    Mojo::Util::monkey_patch $caller, $name => $wrapped;
+  };
+  return $wrapped;
 }
 
 sub await {
