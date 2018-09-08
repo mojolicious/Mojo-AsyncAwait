@@ -5,6 +5,7 @@ use Mojo::Base -strict;
 use Coro ();
 use Mojo::Promise;
 use Scalar::Util ();
+use Carp();
 
 use Exporter 'import';
 
@@ -15,7 +16,7 @@ sub async {
   return sub {
     my @args = @_;
     Coro->new(sub{
-      $sub->(@args);
+      eval { $sub->(@args); 1 } or return $Coro::main->throw($@);
       $Coro::main->schedule_to;
     })->schedule_to;
   };
@@ -40,7 +41,7 @@ sub await {
   );
 
   $Coro::main->schedule_to;
-  die $err if $err;
+  Carp::croak($err) if $err;
   return $retval;
 }
 
