@@ -13,8 +13,9 @@ our @EXPORT = (qw/async await/);
 sub async {
   my $sub = shift;
   return sub {
+    my @args = @_;
     Coro->new(sub{
-      $sub->(@_);
+      $sub->(@args);
       $Coro::main->schedule_to;
     })->schedule_to;
   };
