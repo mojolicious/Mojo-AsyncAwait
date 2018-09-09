@@ -21,10 +21,12 @@ async doit => sub {
 };
 Mojo::IOLoop->next_tick(\&doit);
 
-Mojo::IOLoop->timer(5 => sub {
-  fail 'timeout';
-  Mojo::IOLoop->stop;
-});
+Mojo::IOLoop->timer(
+  5 => sub {
+    fail 'timeout';
+    Mojo::IOLoop->stop;
+  }
+);
 
 Mojo::IOLoop->start;
 

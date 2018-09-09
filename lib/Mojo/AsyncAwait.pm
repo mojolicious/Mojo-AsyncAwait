@@ -13,18 +13,21 @@ use Exporter 'import';
 our @EXPORT = (qw/async await/);
 
 sub async {
-  my $sub = pop;
-  my $name = shift;
+  my $sub     = pop;
+  my $name    = shift;
   my $wrapped = sub {
-    Coro->new(sub{
-      eval { $sub->(@_); 1 } or return $Coro::main->throw($@);
-      $Coro::main->schedule_to;
-    }, @_)->schedule_to;
+    Coro->new(
+      sub {
+        eval { $sub->(@_); 1 } or return $Coro::main->throw($@);
+        $Coro::main->schedule_to;
+      },
+      @_
+    )->schedule_to;
   };
   if ($name) {
     my $caller = caller;
     Mojo::Util::monkey_patch $caller, $name => $wrapped;
-  };
+  }
   return $wrapped;
 }
 
