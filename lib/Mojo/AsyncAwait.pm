@@ -17,9 +17,10 @@ sub async {
   my $name = shift;
   my $wrapped = sub {
     my @args = @_;
+    my $caller = $Coro::current;
     Coro->new(sub{
-      eval { $sub->(@args); 1 } or return $Coro::main->throw($@);
-      $Coro::main->schedule_to;
+      eval { $sub->(@args); 1 } or $caller->throw($@);
+      $caller->schedule_to;
     })->schedule_to;
   };
   if ($name) {
