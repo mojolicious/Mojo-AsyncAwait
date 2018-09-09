@@ -5,9 +5,10 @@ use Test::More;
 use Mojo::IOLoop;
 use Mojo::AsyncAwait;
 
-sub answer {
+sub double {
+  my $in = shift;
   my $p = Mojo::Promise->new;
-  Mojo::IOLoop->timer(0.5 => sub { $p->resolve(42) });
+  Mojo::IOLoop->timer(0.5 => sub { $p->resolve(2 * $in) });
   return $p;
 }
 
@@ -16,7 +17,7 @@ Mojo::IOLoop->recurring(0.1 => sub { $tick++ });
 
 my $answer;
 Mojo::IOLoop->next_tick(async sub {
-  $answer = await answer();
+  $answer = await double(21);
   Mojo::IOLoop->stop;
 });
 
