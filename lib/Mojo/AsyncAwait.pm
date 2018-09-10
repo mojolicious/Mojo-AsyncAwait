@@ -11,17 +11,18 @@ use Exporter 'import';
 
 our @EXPORT = (qw/async await/);
 
+Mojo::IOLoop->recurring(0 => sub { Coro::cede });
+
 sub async {
   my $sub     = pop;
   my $name    = shift;
   my $wrapped = sub {
-    Coro->new(
-      sub {
-        eval { $sub->(@_); 1 } or return $Coro::main->throw($@);
-        $Coro::main->schedule_to;
-      },
-      @_
-    )->schedule_to;
+    my $promise = Mojo::Promise->new;
+    my $coro = Coro->new(sub {
+      eval { $promise->resolve($sub->(@_)); 1 } or $promise->reject($@);
+    }, @_);
+    $coro->ready;
+    return $promise;
   };
   if ($name) {
     my $caller = caller;
@@ -40,15 +41,15 @@ sub await {
   $promise->then(
     sub {
       $retval = shift;
-      $current->schedule_to;
+      $current->ready;
     },
     sub {
       $err = shift;
-      $current->schedule_to;
+      $current->ready;
     }
   );
 
-  $Coro::main->schedule_to;
+  Coro::schedule;
   Carp::croak($err) if $err;
   return $retval;
 }

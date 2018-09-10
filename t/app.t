@@ -27,8 +27,7 @@ app->hook(
     my ($next, $c) = @_;
     push @hooks, 'before_action';
     my $res = $next->();
-    push @hooks, $res;
-    return $res;
+    $res->then(sub{ push @hooks, shift });
   }
 );
 
@@ -39,7 +38,7 @@ get '/' => async sub {
   Mojo::IOLoop->timer(1 => sub { $promise->resolve("hello world") });
   my $text = await $promise;
   $c->render(text => $text);
-  return "all done";
+  return "action done";
 };
 
 my $t = Test::Mojo->new;
@@ -49,7 +48,7 @@ $t->get_ok('/')->status_is(200)->content_is("hello world");
 isa_ok($hooks[0], 'Mojo::Transaction');
 isa_ok($hooks[1], 'Mojolicious::Controller');
 is($hooks[2], 'before_action');
-is($hooks[3], 'all done');
-is($hooks[4], 'after_dispatch');
+is($hooks[3], 'after_dispatch');
+is($hooks[4], 'action done');
 
 done_testing;
