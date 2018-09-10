@@ -1,7 +1,6 @@
 use Test::More;
 use Test::Mojo;
 
-use Mojo::AsyncAwait;
 use Mojolicious::Lite;
 
 my @hooks;
@@ -32,13 +31,14 @@ app->hook(
   }
 );
 
-get '/' => async sub {
+get '/' => sub {
   my $c       = shift;
   $c->render_later;
   my $promise = Mojo::Promise->new;
   Mojo::IOLoop->timer(1 => sub { $promise->resolve("hello world") });
-  my $text = await $promise;
-  $c->render(text => $text);
+$promise->then(sub {
+    $c->render(text => shift);
+  });
   return "all done";
 };
 
