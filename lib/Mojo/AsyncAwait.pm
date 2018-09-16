@@ -54,7 +54,10 @@ sub async {
   my $wrapped = sub {
     my $promise = Mojo::Promise->new;
     _push(Coro::State->new(sub {
-      eval { $promise->resolve($sub->(@_)); 1 } or $promise->reject($@);
+      eval {
+        BEGIN { $^H{'Mojo::AsyncAwait/async'} = 1 }
+        $promise->resolve($sub->(@_)); 1
+      } or $promise->reject($@);
       _pop;
     }, @_));
     return $promise;
@@ -67,6 +70,19 @@ sub async {
 }
 
 sub await {
+  {
+    # check that our caller is actually an async function
+    no warnings 'uninitialized';
+    my $level = 1;
+    my ($caller, $hints) = (caller($level))[3, 10];
+
+    # being inside of an eval is ok too
+    ($caller, $hints) = (caller(++$level))[3, 10] while $caller eq '(eval)';
+
+    Carp::croak 'await may only be called from in async function'
+      unless $hints->{'Mojo::AsyncAwait/async'};
+  }
+
   my $promise = shift;
   $promise = Mojo::Promise->new->resolve($promise)
     unless Scalar::Util::blessed($promise) && $promise->can('then');
@@ -142,10 +158,10 @@ works however none are available yet. In the future if additional
 implementations are available, this module might well be made pluggable. Please
 do not rely on L<Coro> being the implmementation of choice.
 
-Also note that while the L<Coro>-based implementation does not rely on L</await>
-being called directly from an L</async> function, it is currently not
-prohibitied. Other implementations might rely on that behavior and thus it
-should not be relied upon.
+Also note that while a L<Coro>-based implementation need not rely on L</await>
+being called directly from an L</async> function, it is currently prohibitied
+because it is likely that other/future implementations will rely on that
+behavior and thus it should not be relied upon.
 
 =head1 KEYWORDS
 
