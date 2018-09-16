@@ -24,7 +24,7 @@ sub async {
     $coro->ready;
     return $promise;
   };
-  if ($name) {
+  if ($name && !defined wantarray) {
     my $caller = caller;
     Mojo::Util::monkey_patch $caller, $name => $wrapped;
   }
