@@ -37,10 +37,10 @@ sub await {
     unless Scalar::Util::blessed($promise) && $promise->can('then');
 
   my $current = $Coro::current;
-  my ($retval, $err);
+  my (@retvals, $err);
   $promise->then(
     sub {
-      $retval = shift;
+      @retvals = @_;
       $current->ready;
     },
     sub {
@@ -51,7 +51,7 @@ sub await {
 
   Coro::schedule;
   Carp::croak($err) if $err;
-  return $retval;
+  return @retvals
 }
 
 1;
@@ -64,14 +64,7 @@ Mojo::AsyncAwait - Async/Await using Coro and with a Mojo flourish
 
 =head1 SYNOPSIS
 
-
-  use Mojolicious::Lite;
-  use Mojo::AsyncAwait;
-
-  get('/' => async sub {
-    my $c = shift;
-    $c->render(text=> "Mojo front page is ".await($c->ua->get_p("mojolicious.org"))->res->headers->content_length);
-  });
+  
 
 
 =head1 DESCRIPTION
