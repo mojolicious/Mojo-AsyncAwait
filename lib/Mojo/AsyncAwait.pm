@@ -51,7 +51,7 @@ sub await {
 
   Coro::schedule;
   Carp::croak($err) if $err;
-  return @retvals
+  return wantarray ? @retvals : $retvals[0];
 }
 
 1;
