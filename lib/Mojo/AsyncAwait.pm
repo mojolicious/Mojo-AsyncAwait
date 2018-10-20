@@ -2,7 +2,7 @@ package Mojo::AsyncAwait;
 use Mojo::Base -strict;
 
 use Carp();
-use Coro ();
+use Coro::State ();
 use Mojo::Util;
 use Mojo::Promise;
 use Scalar::Util ();
@@ -11,17 +11,32 @@ use Exporter 'import';
 
 our @EXPORT = (qw/async await/);
 
-Mojo::IOLoop->recurring(0 => sub { Coro::cede });
+my $main = Coro::State->new;
+my @stack = ($main);
+my @clean;
+
+# _push adds a coroutine to the stack and enters it
+# when control returns to the original pusher, it will clean up
+# any coroutines that are waiting to be cleaned up
+
+sub _push {
+  push @stack, @_;
+  $stack[-2]->transfer($stack[-1]);
+  $_->cancel for @clean;
+  @clean = ();
+}
 
 sub async {
   my $sub     = pop;
   my $name    = shift;
   my $wrapped = sub {
     my $promise = Mojo::Promise->new;
-    my $coro = Coro->new(sub {
+    _push(Coro::State->new(sub {
       eval { $promise->resolve($sub->(@_)); 1 } or $promise->reject($@);
-    }, @_);
-    $coro->ready;
+      my $current = pop @stack;
+      push @clean, $current;
+      $current->transfer($stack[-1]);
+    }, @_));
     return $promise;
   };
   if ($name && !defined wantarray) {
@@ -36,20 +51,20 @@ sub await {
   $promise = Mojo::Promise->new->resolve($promise)
     unless Scalar::Util::blessed($promise) && $promise->can('then');
 
-  my $current = $Coro::current;
+  my $current = pop @stack;
   my (@retvals, $err);
   $promise->then(
     sub {
       @retvals = @_;
-      $current->ready;
+      _push $current;
     },
     sub {
       $err = shift;
-      $current->ready;
+      _push $current;
     }
   );
 
-  Coro::schedule;
+  $current->transfer($stack[-1]);
   Carp::croak($err) if $err;
   return wantarray ? @retvals : $retvals[0];
 }
