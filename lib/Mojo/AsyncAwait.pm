@@ -12,7 +12,13 @@ use Exporter 'import';
 our @EXPORT = (qw/async await/);
 
 my $main = Coro::State->new;
+$main->{desc} = 'Mojo::AsyncAwait/$main';
+
+# LIFO stack of coroutines waiting to come back to
+# always has $main as the bottom of the stack
 my @stack = ($main);
+
+# Coroutines that are ostensible done but need someone to kill them
 my @clean;
 
 # _push adds a coroutine to the stack and enters it
@@ -26,6 +32,22 @@ sub _push {
   @clean = ();
 }
 
+# _pop pops the current coroutine off the stack. If given a callback, it calls
+# a callback on it, otherwise, schedules it for cleanup. It then transfers to
+# the next one on the stack. Note that it can't pop-and-return (which would
+# make more sense) because any action on it must happen before control is
+# transfered away from it
+
+sub _pop (;&) {
+  Carp::croak "Cannot leave the main thread"
+    if $stack[-1] == $main;
+  my ($cb) = @_;
+  my $current = pop @stack;
+  if ($cb) { $cb->($current)       }
+  else     { push @clean, $current }
+  $current->transfer($stack[-1]);
+}
+
 sub async {
   my $sub     = pop;
   my $name    = shift;
@@ -33,9 +55,7 @@ sub async {
     my $promise = Mojo::Promise->new;
     _push(Coro::State->new(sub {
       eval { $promise->resolve($sub->(@_)); 1 } or $promise->reject($@);
-      my $current = pop @stack;
-      push @clean, $current;
-      $current->transfer($stack[-1]);
+      _pop;
     }, @_));
     return $promise;
   };
@@ -51,20 +71,22 @@ sub await {
   $promise = Mojo::Promise->new->resolve($promise)
     unless Scalar::Util::blessed($promise) && $promise->can('then');
 
-  my $current = pop @stack;
   my (@retvals, $err);
-  $promise->then(
-    sub {
-      @retvals = @_;
-      _push $current;
-    },
-    sub {
-      $err = shift;
-      _push $current;
-    }
-  );
+  _pop {
+    my $current = shift;
+    $promise->then(
+      sub {
+        @retvals = @_;
+        _push $current;
+      },
+      sub {
+        $err = shift;
+        _push $current;
+      }
+    );
+  };
 
-  $current->transfer($stack[-1]);
+  # "_push $current" in the above callback brings us here
   Carp::croak($err) if $err;
   return wantarray ? @retvals : $retvals[0];
 }
