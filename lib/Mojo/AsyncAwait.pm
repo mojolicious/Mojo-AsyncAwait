@@ -1,7 +1,7 @@
 package Mojo::AsyncAwait;
 use Mojo::Base -strict;
 
-use Carp();
+use Carp ();
 use Coro::State ();
 use Mojo::Util;
 use Mojo::Promise;
