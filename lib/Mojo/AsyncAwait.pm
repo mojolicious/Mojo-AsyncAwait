@@ -140,7 +140,7 @@ The default implementation relies on L<Coro> which does some very magical
 things to the Perl interpreter. Other less magical implementations are in the
 works however none are available yet. In the future if additional
 implementations are available, this module might well be made pluggable. Please
-do not rely on the L<Coro> being the implmementation of choice.
+do not rely on L<Coro> being the implmementation of choice.
 
 Also note that while the L<Coro>-based implementation does not rely on L</await>
 being called directly from an L</async> function, it is currently not
