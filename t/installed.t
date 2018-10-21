@@ -17,11 +17,11 @@ Mojo::IOLoop->recurring(0.1 => sub { $tick++ });
 
 my $answer;
 my $body = sub { $answer = await answer() };
-my $doit = async -name => doit => $body;
+async doit => $body;
 
 my $package = __PACKAGE__;
 is subname($body), "${package}::__ASYNCBODY__(doit)", 'correct body name';
-is subname($doit), "${package}::__ASYNCSUB__(doit)", 'correct sub name';
+is subname(\&doit), "${package}::doit", 'correct sub name';
 
 Mojo::IOLoop->timer(
   5 => sub {
@@ -30,7 +30,7 @@ Mojo::IOLoop->timer(
   }
 );
 
-$doit->()->wait;
+doit()->wait;
 
 is $answer, 42, 'got expected answer';
 ok $tick > 2, 'got multiple ticks';

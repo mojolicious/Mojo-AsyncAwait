@@ -6,6 +6,7 @@ use Coro::State ();
 use Mojo::Util;
 use Mojo::Promise;
 use Scalar::Util ();
+use Sub::Util ();
 
 use Exporter 'import';
 
@@ -49,23 +50,42 @@ sub _pop (;&) {
 }
 
 sub async {
-  my $sub     = pop;
-  my $name    = shift;
+  my $body   = pop;
+  my $opts   = _parse_opts(@_);
+  my @caller = caller;
+
+  my $subname  = "$caller[0]::__ASYNCSUB__";
+  my $bodyname = "$caller[0]::__ASYNCBODY__";
+  if (defined(my $name = $opts->{-name})) {
+    $subname  = $opts->{-install} ? "$caller[0]::$name" : "$subname($name)";
+    $bodyname .= "($name)";
+  }
+  my $desc = "declared at $caller[1] line $caller[2]";
+
+  Sub::Util::set_subname($bodyname => $body)
+    if Sub::Util::subname($body) =~ /::__ANON__$/;
+
   my $wrapped = sub {
+    my @caller  = caller;
     my $promise = Mojo::Promise->new;
-    _push(Coro::State->new(sub {
+    my $coro    = Coro::State->new(sub {
       eval {
         BEGIN { $^H{'Mojo::AsyncAwait/async'} = 1 }
-        $promise->resolve($sub->(@_)); 1
+        $promise->resolve($body->(@_)); 1
       } or $promise->reject($@);
       _pop;
-    }, @_));
+    }, @_);
+    $coro->{desc} = "$subname called at $caller[1] line $caller[2], $desc";
+    _push $coro;
     return $promise;
   };
-  if ($name && !defined wantarray) {
-    my $caller = caller;
-    Mojo::Util::monkey_patch $caller, $name => $wrapped;
+
+  if ($opts->{-install}) {
+    Mojo::Util::monkey_patch $caller[0], $opts->{-name} => $wrapped;
+    return;
   }
+
+  Sub::Util::set_subname $subname => $wrapped;
   return $wrapped;
 }
 
@@ -105,6 +125,20 @@ sub await {
   # "_push $current" in the above callback brings us here
   Carp::croak($err) if $err;
   return wantarray ? @retvals : $retvals[0];
+}
+
+sub _parse_opts {
+  return {} unless @_;
+  return {
+    -name    => shift,
+    -install => 1,
+  } if @_ == 1;
+
+  my %opts = @_;
+  Carp::croak 'Cannot install a sub without a name'
+    if $opts{-install} && !defined $opts{-name};
+
+  return \%opts;
 }
 
 1;
@@ -176,15 +210,43 @@ The async keyword wraps a subroutine as an asynchronous subroutine which is
 able to be suspended via L</await>. The return value(s) of the subroutine, when
 called, will be wrapped in a L<Mojo::Promise>.
 
-The async keyword must be called with a subroutine reference. The returned
-value is the wrapped asynchronous subroutine reference.
+The async keyword must be called with a subroutine reference, which will be the
+body of the async subroutine.
 
-The async keyword may also be used to install an asynchronous named subroutine
-into the caller. This is done by calling async with two arguments, a name and a
-subroutine reference.
+If called with a preceding name, the subroutine will be installed into the current package with that name.
 
-  async named_sub => sub { ... };
-  named_sub();
+  async installed_sub => sub { ... };
+  installed_sub();
+
+If called with key-value arguments starting with a dash, the following options are available.
+
+=over
+
+=item -install
+
+If set to a true value, the subroutine will be installed into the current package.
+Default is false.
+Setting this value to true without a C<-name> is an error.
+
+=item -name
+
+If C<-install> is false, this is a diagnostic name to be included in the subname for debugging purposes.
+This name is seen in diagnostic information, like stack traces.
+
+  my $named_sub = async -name => my_name => sub { ... };
+  $named_sub->();
+
+Otherwise this is the name that will be installed into the current package.
+
+=back
+
+Therefore, passing a bare name as is identical to setting both C<-name> and C<< -install => 1 >>.
+
+  async -name => installed_sub, -install => 1 => sub { ... };
+  installed_sub();
+
+If the subroutine is installed, whether by passing a bare name or the C<-install> option, nothing is returned.
+Otherwise the return value is the wrapped async subroutine reference.
 
 =head2 await
 
