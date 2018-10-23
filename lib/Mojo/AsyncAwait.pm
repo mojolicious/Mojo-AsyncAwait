@@ -278,6 +278,14 @@ Marcus Ramberg <mramberg@cpan.org>
 
 Sebastian Riedel <kraih@mojolicious.org>
 
+=head1 ADDITIONAL THANKS
+
+Matt S Trout (mst)
+
+Paul Evans (LeoNerd)
+
+John Susek
+
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 2018, L</AUTHORS> and L</CONTRIBUTORS>.
