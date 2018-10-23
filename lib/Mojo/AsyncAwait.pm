@@ -177,6 +177,11 @@ promise passed to await has been fulfilled.
 This pattern simplies the use of both promises and nonblocking code in general
 and is therefore a very exciting development for writing asynchronous systems.
 
+If you are going to use this module to create async controllers actions in
+L<Mojolicious> applications (as seen in the L</SYNOPSIS>), you are highly
+encouraged to also use L<Mojolicious::Plugin::PromiseActions> in order to
+properly handle exceptions in your action.
+
 =head1 CAVEATS
 
 First and foremost, this is all a little bit crazy. Please consider carefully
@@ -296,6 +301,8 @@ the terms of the Artistic License version 2.0.
 =head1 SEE ALSO
 
 L<Mojo::Promise>
+
+L<Mojolicious::Plugin::PromiseActions>
 
 L<MDN Async/Await|https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function>
 
