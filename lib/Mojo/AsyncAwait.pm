@@ -147,7 +147,7 @@ sub _parse_opts {
 
 =head1 NAME
 
-Mojo::AsyncAwait - An async/await implementation for Mojolicious
+Mojo::AsyncAwait - An Async/Await implementation for Mojolicious
 
 =head1 SYNOPSIS
 
@@ -295,9 +295,14 @@ the terms of the Artistic License version 2.0.
 
 =head1 SEE ALSO
 
-L<https://github.com/mojolicious/mojo>, L<Mojolicious::Guides>,
-L<https://mojolicious.org>.
+L<Mojo::Promise>
 
-TODO
+L<MDN Async/Await|https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function>
+
+L<Coro::State>
+
+L<Future::AsyncAwait>
+
+L<PerlX::AsyncAwait>
 
 =cut
