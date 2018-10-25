@@ -270,6 +270,12 @@ If the value passed to await is not a promise (defined as having a C<then>
 method>), it will be wrapped in a Mojo::Promise for consistency. This is mostly
 inconsequential to the user.
 
+Note that await can only take one promise as an argument. If you wanted to
+await multiple promises you probably want L<Mojo::Promise/all> or less likely
+L<Mojo::Promise/race>.
+
+  my $results = await Mojo::Promise->all(@promises);
+
 =head1 AUTHORS
 
 Joel Berger <joel.a.berger@gmail.com>
