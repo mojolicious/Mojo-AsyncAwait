@@ -89,7 +89,10 @@ sub async {
   return $wrapped;
 }
 
-sub await {
+# this prototype prevents the perl tokenizer from seeing await as an
+# indirect method
+
+sub await (*) {
   {
     # check that our caller is actually an async function
     no warnings 'uninitialized';
@@ -266,12 +269,6 @@ returned and the remainder are discarded.
 If the value passed to await is not a promise (defined as having a C<then>
 method>), it will be wrapped in a Mojo::Promise for consistency. This is mostly
 inconsequential to the user.
-
-Note: An unfortunate conflict with the Perl parser sometimes causes it to see
-the await keyword as an indirect object call on the promise. To avoid this, if
-necessary, either call with parentheses C<await($promise)> or with a unary plus
-operator C<await +$promise>. The CPAN module L<indirect> may help spot these
-situations at compile time rather than runtime.
 
 =head1 AUTHORS
 

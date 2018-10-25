@@ -21,7 +21,7 @@ get '/' => async sub {
   my $y = $c->ua->get_p('/y');
 
   # Render a response once both promises have been resolved
-  my ($got_x, $got_y) = await +Mojo::Promise->all($x, $y);
+  my ($got_x, $got_y) = await Mojo::Promise->all($x, $y);
 
   $c->render(json => {
     x => $got_x->[0]->result->text,
