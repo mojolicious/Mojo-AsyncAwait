@@ -11,6 +11,7 @@ use Sub::Util ();
 use Exporter 'import';
 
 our @EXPORT = (qw/async await/);
+our $PROMISE_CLASS = 'Mojo::Promise';
 
 my $main = Coro::State->new;
 $main->{desc} = 'Mojo::AsyncAwait/$main';
@@ -67,7 +68,7 @@ sub async {
 
   my $wrapped = sub {
     my @caller  = caller;
-    my $promise = Mojo::Promise->new;
+    my $promise = $PROMISE_CLASS->new;
     my $coro    = Coro::State->new(sub {
       eval {
         BEGIN { $^H{'Mojo::AsyncAwait/async'} = 1 }
@@ -107,7 +108,7 @@ sub await (*) {
   }
 
   my $promise = shift;
-  $promise = Mojo::Promise->new->resolve($promise)
+  $promise = $PROMISE_CLASS->new->resolve($promise)
     unless Scalar::Util::blessed($promise) && $promise->can('then');
 
   my (@retvals, $err);
