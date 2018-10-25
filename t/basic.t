@@ -16,12 +16,7 @@ my $tick = 0;
 Mojo::IOLoop->recurring(0.1 => sub { $tick++ });
 
 my $answer;
-Mojo::IOLoop->next_tick(
-  async sub {
-    $answer = await double(21);
-    Mojo::IOLoop->stop;
-  }
-);
+async(sub { $answer = await double(21) })->()->wait;
 
 Mojo::IOLoop->timer(
   5 => sub {
@@ -29,8 +24,6 @@ Mojo::IOLoop->timer(
     Mojo::IOLoop->stop;
   }
 );
-
-Mojo::IOLoop->start;
 
 is $answer, 42, 'got expected answer';
 ok $tick > 2, 'got multiple ticks';
