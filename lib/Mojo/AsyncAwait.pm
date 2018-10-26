@@ -197,8 +197,8 @@ Secondarily, it is intended to be a testbed for early implementations of
 Async/Await in the Perl 5 language. It is for this reason that the
 implementation details are intended to be replaceable. This may manifest as a
 pluggable backend or rather as wholesale rewrites of the internals. The result
-should be backwards compatible, mostly because the interface is so simple, just
-two keywords.
+should hopefully be backwards compatible, mostly because the interface is so
+simple, just two keywords.
 
 Of course, I always intend as much as possible that Mojolicious-focused code is
 as useful as practically possible for the broader Perl 5 ecosystem. It is for
