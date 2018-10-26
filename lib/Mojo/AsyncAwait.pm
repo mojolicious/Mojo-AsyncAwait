@@ -200,10 +200,17 @@ pluggable backend or rather as wholesale rewrites of the internals. The result
 should be backwards compatible, mostly because the interface is so simple, just
 two keywords.
 
+Of course, I always intend as much as possible that Mojolicious-focused code is
+as useful as practically possible for the broader Perl 5 ecosystem. It is for
+this reason that while this module returns L<Mojo::Promise>s, it can accept any
+then-able (read: promise) which conforms enough to the Promises/A+ standard.
+The Promises/A+ standard is intended to increase the interoperability of
+promises, and while that line becomes more gray in Perl 5 where we don't have a
+single ioloop implementation, we try our best.
+
 As implementations stabilze, or change, certain portions may be spun off. The
 initial implementation depends on L<Coro>. Should that change, or should users
-want to use it with other promise implementations, perhaps it might (note: it
-will accept any then-ables now, it just returns L<Mojo::Promise>s). Perhaps
+want to use it with other promise implementations, perhaps it might. Perhaps
 that implementation will be spun off to be used apart from L<Mojolicious> and
 L<Mojo::Promise>, perhaps not.
 
