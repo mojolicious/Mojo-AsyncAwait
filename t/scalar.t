@@ -10,15 +10,15 @@ sub double {
   return 2 * $in;
 }
 
-my $answer;
-async(sub { $answer = await double(21) })->()->wait;
-
 Mojo::IOLoop->timer(
   5 => sub {
     fail 'timeout';
     Mojo::IOLoop->stop;
   }
 );
+
+my $answer;
+async(sub { $answer = await double(21) })->()->wait;
 
 is $answer, 42, 'got expected answer';
 

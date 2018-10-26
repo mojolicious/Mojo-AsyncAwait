@@ -15,6 +15,13 @@ sub answer {
 my $tick = 0;
 Mojo::IOLoop->recurring(0.1 => sub { $tick++ });
 
+Mojo::IOLoop->timer(
+  5 => sub {
+    fail 'timeout';
+    Mojo::IOLoop->stop;
+  }
+);
+
 my $answer;
 my $body = sub { $answer = await answer() };
 async doit => $body;
@@ -22,13 +29,6 @@ async doit => $body;
 my $package = __PACKAGE__;
 is subname($body), "${package}::__ASYNCBODY__(doit)", 'correct body name';
 is subname(\&doit), "${package}::doit", 'correct sub name';
-
-Mojo::IOLoop->timer(
-  5 => sub {
-    fail 'timeout';
-    Mojo::IOLoop->stop;
-  }
-);
 
 doit()->wait;
 

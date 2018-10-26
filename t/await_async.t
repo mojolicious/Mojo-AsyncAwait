@@ -21,15 +21,15 @@ async quad => sub {
 my $tick = 0;
 Mojo::IOLoop->recurring(0.1 => sub { $tick++ });
 
-my $answer;
-async(sub { $answer = await quad(3) })->()->wait;
-
 Mojo::IOLoop->timer(
   5 => sub {
     fail 'timeout';
     Mojo::IOLoop->stop;
   }
 );
+
+my $answer;
+async(sub { $answer = await quad(3) })->()->wait;
 
 is $answer, 12, 'got expected answer';
 ok $tick > 2, 'got multiple ticks';

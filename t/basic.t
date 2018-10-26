@@ -15,15 +15,15 @@ sub double {
 my $tick = 0;
 Mojo::IOLoop->recurring(0.1 => sub { $tick++ });
 
-my $answer;
-async(sub { $answer = await double(21) })->()->wait;
-
 Mojo::IOLoop->timer(
   5 => sub {
     fail 'timeout';
     Mojo::IOLoop->stop;
   }
 );
+
+my $answer;
+async(sub { $answer = await double(21) })->()->wait;
 
 is $answer, 42, 'got expected answer';
 ok $tick > 2, 'got multiple ticks';
