@@ -5,6 +5,9 @@ use Test::More;
 use Mojo::IOLoop;
 use Mojo::AsyncAwait;
 
+use Test::Lib;
+use TestHelper;
+
 sub double {
   my $in = shift;
   my $p  = Mojo::Promise->new;
@@ -18,21 +21,13 @@ async quad => sub {
   return $ret;
 };
 
-my $tick = 0;
-Mojo::IOLoop->recurring(0.1 => sub { $tick++ });
-
-Mojo::IOLoop->timer(
-  5 => sub {
-    fail 'timeout';
-    Mojo::IOLoop->stop;
-  }
-);
+my $ticker = ticker();
 
 my $answer;
 async(sub { $answer = await quad(3) })->()->wait;
 
 is $answer, 12, 'got expected answer';
-ok $tick > 2, 'got multiple ticks';
+ok $ticker->() > 2, 'got multiple ticks';
 
 done_testing;
 
