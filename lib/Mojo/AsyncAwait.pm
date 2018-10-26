@@ -185,6 +185,36 @@ L<Mojolicious> applications (as seen in the L</SYNOPSIS>), you are highly
 encouraged to also use L<Mojolicious::Plugin::PromiseActions> in order to
 properly handle exceptions in your action.
 
+=head1 GOALS
+
+The primary goal of this module is to provide a useful Async/Await
+implementation for users of the Mojolicious ecosystem. It is for this reason
+that L<Mojo::Promise> is used when new promises are created. Because this is
+the primary goal, the intention is for it to remain useful even as other goals
+are considered.
+
+Secondarily, it is intended to be a testbed for early implementations of
+Async/Await in the Perl 5 language. It is for this reason that the
+implementation details are intended to be replaceable. This may manifest as a
+pluggable backend or rather as wholesale rewrites of the internals. The result
+should be backwards compatible, mostly because the interface is so simple, just
+two keywords.
+
+As implementations stabilze, or change, certain portions may be spun off. The
+initial implementation depends on L<Coro>. Should that change, or should users
+want to use it with other promise implementations, perhaps it might (note: it
+will accept any then-ables now, it just returns L<Mojo::Promise>s). Perhaps
+that implementation will be spun off to be used apart from L<Mojolicious> and
+L<Mojo::Promise>, perhaps not.
+
+Finally the third goal is to improve the mobility of the knowledge of this
+pattern between languages. Users of Javascript probably are already familiar
+with this patthern; when coming to Perl 5 they will want to continue to use it.
+Likewise, as Perl 5 users take on new languages, if they are familiar with
+common patterns in their new language, they will have an easier time learning.
+Having a useable Async/Await library in Perl 5 is key to keeping Perl 5
+relevent in moderning coding.
+
 =head1 CAVEATS
 
 First and foremost, this is all a little bit crazy. Please consider carefully
@@ -258,8 +288,8 @@ Otherwise the return value is the wrapped async subroutine reference.
 
 =head2 await
 
-  my $tx = await +Mojo::UserAgent->new->get_p('https://mojolicious.org');
-  my @results = await async sub { ...; return @async_results };
+  my $tx = await Mojo::UserAgent->new->get_p('https://mojolicious.org');
+  my @results = await (async sub { ...; return @async_results })->();
 
 The await keyword suspends execution of an async sub until a promise is
 fulfilled, returning the promise's results. In list context all promise results
