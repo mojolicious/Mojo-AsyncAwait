@@ -258,6 +258,11 @@ called, will be wrapped in a L<Mojo::Promise>.
 The async keyword must be called with a subroutine reference, which will be the
 body of the async subroutine.
 
+Note that the returned subroutine reference is not invoked for you.
+If you want to immediately invoke it, you need to so manually.
+
+  my $promise = async(sub{ ... })->();
+
 If called with a preceding name, the subroutine will be installed into the current package with that name.
 
   async installed_sub => sub { ... };
