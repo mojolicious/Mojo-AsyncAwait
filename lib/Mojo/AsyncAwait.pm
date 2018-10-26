@@ -210,9 +210,9 @@ single ioloop implementation, we try our best.
 
 As implementations stabilze, or change, certain portions may be spun off. The
 initial implementation depends on L<Coro>. Should that change, or should users
-want to use it with other promise implementations, perhaps it might. Perhaps
-that implementation will be spun off to be used apart from L<Mojolicious> and
-L<Mojo::Promise>, perhaps not.
+want to use it with other promise implementations, perhaps that implementation
+will be spun off to be used apart from L<Mojolicious> and/or L<Mojo::Promise>,
+perhaps not.
 
 Finally the third goal is to improve the mobility of the knowledge of this
 pattern between languages. Users of Javascript probably are already familiar
