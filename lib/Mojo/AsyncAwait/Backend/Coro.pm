@@ -1,20 +1,150 @@
-package Mojo::AsyncAwait;
+package Mojo::AsyncAwait::Backend::Coro;
+use Mojo::Base -strict;
 
 use Carp ();
-use Mojo::Loader;
-use Import::Into;
+use Coro::State ();
+use Mojo::Util;
+use Mojo::Promise;
+use Scalar::Util ();
+use Sub::Util ();
 
-sub import {
-  my $backend = $ENV{MOJO_ASYNCAWAIT_BACKEND} // $_[1] // '+Coro';
-  $backend =~ s/^\+/Mojo::AsyncAwait::Backend::/;
-  if(my $e = Mojo::Loader::load_class($backend)) {
-    Carp::croak(ref $e ? $e : "Could not find backend $backend. Perhaps you need to install it?");
+use Exporter 'import';
+
+our @EXPORT = (qw/async await/);
+
+my $main = Coro::State->new;
+$main->{desc} = 'Mojo::AsyncAwait::Backend::Coro/$main';
+
+# LIFO stack of coroutines waiting to come back to
+# always has $main as the bottom of the stack
+my @stack = ($main);
+
+# Coroutines that are ostensible done but need someone to kill them
+my @clean;
+
+# _push adds a coroutine to the stack and enters it
+# when control returns to the original pusher, it will clean up
+# any coroutines that are waiting to be cleaned up
+
+sub _push {
+  push @stack, @_;
+  $stack[-2]->transfer($stack[-1]);
+  $_->cancel for @clean;
+  @clean = ();
+}
+
+# _pop pops the current coroutine off the stack. If given a callback, it calls
+# a callback on it, otherwise, schedules it for cleanup. It then transfers to
+# the next one on the stack. Note that it can't pop-and-return (which would
+# make more sense) because any action on it must happen before control is
+# transfered away from it
+
+sub _pop (;&) {
+  Carp::croak "Cannot leave the main thread"
+    if $stack[-1] == $main;
+  my ($cb) = @_;
+  my $current = pop @stack;
+  if ($cb) { $cb->($current)       }
+  else     { push @clean, $current }
+  $current->transfer($stack[-1]);
+}
+
+sub async {
+  my $body   = pop;
+  my $opts   = _parse_opts(@_);
+  my @caller = caller;
+
+  my $subname  = "$caller[0]::__ASYNCSUB__";
+  my $bodyname = "$caller[0]::__ASYNCBODY__";
+  if (defined(my $name = $opts->{-name})) {
+    $subname  = $opts->{-install} ? "$caller[0]::$name" : "$subname($name)";
+    $bodyname .= "($name)";
   }
-  $backend->import::into(scalar caller);
+  my $desc = "declared at $caller[1] line $caller[2]";
+
+  Sub::Util::set_subname($bodyname => $body)
+    if Sub::Util::subname($body) =~ /::__ANON__$/;
+
+  my $wrapped = sub {
+    my @caller  = caller;
+    my $promise = Mojo::Promise->new;
+    my $coro    = Coro::State->new(sub {
+      eval {
+        BEGIN { $^H{'Mojo::AsyncAwait::Backend::Coro/async'} = 1 }
+        $promise->resolve($body->(@_)); 1
+      } or $promise->reject($@);
+      _pop;
+    }, @_);
+    $coro->{desc} = "$subname called at $caller[1] line $caller[2], $desc";
+    _push $coro;
+    return $promise;
+  };
+
+  if ($opts->{-install}) {
+    Mojo::Util::monkey_patch $caller[0], $opts->{-name} => $wrapped;
+    return;
+  }
+
+  Sub::Util::set_subname $subname => $wrapped;
+  return $wrapped;
+}
+
+# this prototype prevents the perl tokenizer from seeing await as an
+# indirect method
+
+sub await (*) {
+  {
+    # check that our caller is actually an async function
+    no warnings 'uninitialized';
+    my $level = 1;
+    my ($caller, $hints) = (caller($level))[3, 10];
+
+    # being inside of an eval is ok too
+    ($caller, $hints) = (caller(++$level))[3, 10] while $caller eq '(eval)';
+
+    Carp::croak 'await may only be called from in async function'
+      unless $hints->{'Mojo::AsyncAwait::Backend::Coro/async'};
+  }
+
+  my $promise = shift;
+  $promise = Mojo::Promise->new->resolve($promise)
+    unless Scalar::Util::blessed($promise) && $promise->can('then');
+
+  my (@retvals, $err);
+  _pop {
+    my $current = shift;
+    $promise->then(
+      sub {
+        @retvals = @_;
+        _push $current;
+      },
+      sub {
+        $err = shift;
+        _push $current;
+      }
+    );
+  };
+
+  # "_push $current" in the above callback brings us here
+  Carp::croak($err) if $err;
+  return wantarray ? @retvals : $retvals[0];
+}
+
+sub _parse_opts {
+  return {} unless @_;
+  return {
+    -name    => shift,
+    -install => 1,
+  } if @_ == 1;
+
+  my %opts = @_;
+  Carp::croak 'Cannot install a sub without a name'
+    if $opts{-install} && !defined $opts{-name};
+
+  return \%opts;
 }
 
 1;
-
 
 =encoding utf8
 
@@ -228,4 +358,3 @@ L<Future::AsyncAwait>
 L<PerlX::AsyncAwait>
 
 =cut
-
