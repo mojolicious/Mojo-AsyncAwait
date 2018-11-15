@@ -150,7 +150,7 @@ sub _parse_opts {
 
 =head1 NAME
 
-Mojo::AsyncAwait - An Async/Await implementation for Mojolicious
+Mojo::AsyncAwait::Backend::Coro - An Async/Await implementation for Mojolicious using Coro
 
 =head1 SYNOPSIS
 
@@ -172,70 +172,15 @@ Mojo::AsyncAwait - An Async/Await implementation for Mojolicious
 
 =head1 DESCRIPTION
 
-Async/await is a language-independent pattern that allows nonblocking
-asynchronous code to be structured simliarly to blocking code. This is done by
-allowing execution to be suspended by the await keyword and returning once the
-promise passed to await has been fulfilled.
-
-This pattern simplies the use of both promises and nonblocking code in general
-and is therefore a very exciting development for writing asynchronous systems.
-
-If you are going to use this module to create async controllers actions in
-L<Mojolicious> applications (as seen in the L</SYNOPSIS>), you are highly
-encouraged to also use L<Mojolicious::Plugin::PromiseActions> in order to
-properly handle exceptions in your action.
-
-=head1 GOALS
-
-The primary goal of this module is to provide a useful Async/Await
-implementation for users of the Mojolicious ecosystem. It is for this reason
-that L<Mojo::Promise> is used when new promises are created. Because this is
-the primary goal, the intention is for it to remain useful even as other goals
-are considered.
-
-Secondarily, it is intended to be a testbed for early implementations of
-Async/Await in the Perl 5 language. It is for this reason that the
-implementation details are intended to be replaceable. This may manifest as a
-pluggable backend or rather as wholesale rewrites of the internals. The result
-should hopefully be backwards compatible, mostly because the interface is so
-simple, just two keywords.
-
-Of course, I always intend as much as possible that Mojolicious-focused code is
-as useful as practically possible for the broader Perl 5 ecosystem. It is for
-this reason that while this module returns L<Mojo::Promise>s, it can accept any
-then-able (read: promise) which conforms enough to the Promises/A+ standard.
-The Promises/A+ standard is intended to increase the interoperability of
-promises, and while that line becomes more gray in Perl 5 where we don't have a
-single ioloop implementation, we try our best.
-
-As implementations stabilze, or change, certain portions may be spun off. The
-initial implementation depends on L<Coro>. Should that change, or should users
-want to use it with other promise implementations, perhaps that implementation
-will be spun off to be used apart from L<Mojolicious> and/or L<Mojo::Promise>,
-perhaps not.
-
-Finally the third goal is to improve the mobility of the knowledge of this
-pattern between languages. Users of Javascript probably are already familiar
-with this patthern; when coming to Perl 5 they will want to continue to use it.
-Likewise, as Perl 5 users take on new languages, if they are familiar with
-common patterns in their new language, they will have an easier time learning.
-Having a useable Async/Await library in Perl 5 is key to keeping Perl 5
-relevent in moderning coding.
+As the name suggests, L<Mojo::AsyncAwait::Backend::Coro> is an implementation
+of the Async/Await pattern, using L<Mojo::Promise> and L<Coro>. See more at
+L<Mojo::AsyncAwait>.
 
 =head1 CAVEATS
 
-First and foremost, this is all a little bit crazy. Please consider carefully
-before using this code in production.
-
-While many languages have async/await as a core language feature, currently in
-Perl we must rely on modules that provide the mechanism of suspending and
-resuming execution.
-
-The default implementation relies on L<Coro> which does some very magical
-things to the Perl interpreter. Other less magical implementations are in the
-works however none are available yet. In the future if additional
-implementations are available, this module might well be made pluggable. Please
-do not rely on L<Coro> being the implmementation of choice.
+This implementation relies on L<Coro> which does some very magical things to
+the Perl interpreter. All caveats that apply to using L<Coro::State> apply to
+this module as well.
 
 Also note that while a L<Coro>-based implementation need not rely on L</await>
 being called directly from an L</async> function, it is currently prohibitied
@@ -244,8 +189,9 @@ behavior and thus it should not be relied upon.
 
 =head1 KEYWORDS
 
-L<Mojo::AsyncAwait> provides two keywords (i.e. functions), both exported by
-default.
+L<Mojo::AsyncAwait::Backend::Coro> provides two keywords (i.e. functions), both
+exported by default. They are re-exported by L<Mojo::AsyncAwait> if it is the
+chosen implementation.
 
 =head2 async
 
@@ -318,43 +264,8 @@ L<Mojo::Promise/race>.
 
   my $results = await Mojo::Promise->all(@promises);
 
-=head1 AUTHORS
-
-Joel Berger <joel.a.berger@gmail.com>
-
-Marcus Ramberg <mramberg@cpan.org>
-
-=head1 CONTRIBUTORS
-
-Sebastian Riedel <kraih@mojolicious.org>
-
-=head1 ADDITIONAL THANKS
-
-Matt S Trout (mst)
-
-Paul Evans (LeoNerd)
-
-John Susek
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (C) 2018, L</AUTHORS> and L</CONTRIBUTORS>.
-
-This program is free software, you can redistribute it and/or modify it under
-the terms of the Artistic License version 2.0.
-
 =head1 SEE ALSO
 
-L<Mojo::Promise>
-
-L<Mojolicious::Plugin::PromiseActions>
-
-L<MDN Async/Await|https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function>
-
-L<Coro::State>
-
-L<Future::AsyncAwait>
-
-L<PerlX::AsyncAwait>
+L<Mojo::Promise>, L<Mojo::IOLoop>, L<Coro>, L<Coro::State>
 
 =cut

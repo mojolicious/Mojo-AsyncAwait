@@ -78,12 +78,6 @@ The Promises/A+ standard is intended to increase the interoperability of
 promises, and while that line becomes more gray in Perl 5 where we don't have a
 single ioloop implementation, we try our best.
 
-As implementations stabilze, or change, certain portions may be spun off. The
-initial implementation depends on L<Coro>. Should that change, or should users
-want to use it with other promise implementations, perhaps that implementation
-will be spun off to be used apart from L<Mojolicious> and/or L<Mojo::Promise>,
-perhaps not.
-
 Finally the third goal is to improve the mobility of the knowledge of this
 pattern between languages. Users of Javascript probably are already familiar
 with this patthern; when coming to Perl 5 they will want to continue to use it.
@@ -91,6 +85,32 @@ Likewise, as Perl 5 users take on new languages, if they are familiar with
 common patterns in their new language, they will have an easier time learning.
 Having a useable Async/Await library in Perl 5 is key to keeping Perl 5
 relevent in moderning coding.
+
+=head1 BACKENDS
+
+This module actually does very little on its own, it simply loads and imports
+backend implementations of Async/Await. The reason to use this module really
+would be to use current default implementation without regards to what that
+implementation is nor how it works.
+
+To determine the backend, when it is imported, the C<MOJO_ASYNCAWAIT_BACKEND>
+is checked, if that isn't present then any import argument is checked, and
+finally if neither of these are given, the current default is used.
+
+  # From environment
+  BEGIN{ $ENV{MOJO_ASYNCAWAIT_BACKEND} = '+CoolBackend' }
+  use Mojo::AsyncAwait;
+
+  # From argument
+  use Mojo::AsyncAwait '+CoolBackend';
+
+  # Currently provided default
+  use Mojo::AsyncAwait;
+
+The backend is specified either as a fully qualified module name, e.g.
+C<Mojo::AsyncAwait::Backend::CoolBackend> or using the C<+> as a shortcut for
+C<Mojo::AsyncAwait::Backend::>, e.g. C<+CoolBackend> which would mean exactly
+the same as the former.
 
 =head1 CAVEATS
 
@@ -103,9 +123,12 @@ resuming execution.
 
 The default implementation relies on L<Coro> which does some very magical
 things to the Perl interpreter. Other less magical implementations are in the
-works however none are available yet. In the future if additional
-implementations are available, this module might well be made pluggable. Please
-do not rely on L<Coro> being the implmementation of choice.
+works however none are available yet. As available implementations change or
+stabilize, that default may be changed. Backend implementations may be added or
+even be spun off. If your application depends on the backend implementation,
+you may import it manually or use the described mechanisms to load it. In that
+case you should be sure to add the backend to your dependency list in case it
+is spun off in the future.
 
 Also note that while a L<Coro>-based implementation need not rely on L</await>
 being called directly from an L</async> function, it is currently prohibitied
@@ -114,8 +137,15 @@ behavior and thus it should not be relied upon.
 
 =head1 KEYWORDS
 
-L<Mojo::AsyncAwait> provides two keywords (i.e. functions), both exported by
-default.
+Regardless of backend, L<Mojo::AsyncAwait> provides two keywords (i.e.
+functions), both exported by default. Depending on backend, their exact
+behavior might change slightly, however, implementer should attempt to follow
+the api described here as closely as possible.
+
+Some backends may allow additional options to be passed to the keywords; those
+options should be kept minimal and if possible follow the conventions described
+in L<Mojo::AsyncAwait::Backend::Coro>. This generic document will not describe
+those additional options.
 
 =head2 async
 
@@ -133,40 +163,14 @@ If you want to immediately invoke it, you need to so manually.
 
   my $promise = async(sub{ ... })->();
 
-If called with a preceding name, the subroutine will be installed into the current package with that name.
+If called with a preceding name, the subroutine will be installed into the
+current package with that name.
 
   async installed_sub => sub { ... };
   installed_sub();
 
-If called with key-value arguments starting with a dash, the following options are available.
-
-=over
-
-=item -install
-
-If set to a true value, the subroutine will be installed into the current package.
-Default is false.
-Setting this value to true without a C<-name> is an error.
-
-=item -name
-
-If C<-install> is false, this is a diagnostic name to be included in the subname for debugging purposes.
-This name is seen in diagnostic information, like stack traces.
-
-  my $named_sub = async -name => my_name => sub { ... };
-  $named_sub->();
-
-Otherwise this is the name that will be installed into the current package.
-
-=back
-
-Therefore, passing a bare name as is identical to setting both C<-name> and C<< -install => 1 >>.
-
-  async -name => installed_sub, -install => 1 => sub { ... };
-  installed_sub();
-
-If the subroutine is installed, whether by passing a bare name or the C<-install> option, nothing is returned.
-Otherwise the return value is the wrapped async subroutine reference.
+Unlike the case of an anonymous wrapped async subroutine reference described
+above, if the subroutine is installed, nothing is returned.
 
 =head2 await
 
@@ -216,6 +220,8 @@ the terms of the Artistic License version 2.0.
 =head1 SEE ALSO
 
 L<Mojo::Promise>
+
+L<Mojo::IOLoop>
 
 L<Mojolicious::Plugin::PromiseActions>
 
