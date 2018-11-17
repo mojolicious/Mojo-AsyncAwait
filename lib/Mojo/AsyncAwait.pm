@@ -4,6 +4,8 @@ use Carp ();
 use Mojo::Loader;
 use Import::Into;
 
+our $VERSION = '0.01';
+
 my $backend = $ENV{MOJO_ASYNCAWAIT_BACKEND} // '+Coro';
 $backend =~ s/^\+/Mojo::AsyncAwait::Backend::/;
 if(my $e = Mojo::Loader::load_class($backend)) {

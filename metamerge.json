@@ -1,0 +1,16 @@
+{
+   "license" : [ "perl_5" ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "resources" : {
+      "repository" : {
+         "url" : "http://github.com/mojolicious/Mojo-AsyncAwait"
+      },
+      "bugtracker" : {
+         "web" : "http://github.com/mojolicious/Mojo-AsyncAwait/issues"
+      },
+      "license" : [ "http://dev.perl.org/licenses/" ]
+   }
+}
