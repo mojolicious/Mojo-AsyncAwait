@@ -10,9 +10,7 @@ if(my $e = Mojo::Loader::load_class($backend)) {
   Carp::croak(ref $e ? $e : "Could not find backend $backend. Perhaps you need to install it?");
 }
 
-sub import {
-  $backend->import::into(scalar caller);
-}
+sub import { $backend->import::into(scalar caller) }
 
 1;
 
