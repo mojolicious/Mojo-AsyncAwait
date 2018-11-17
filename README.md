@@ -2,8 +2,8 @@
 # Mojo::AsyncAwait
 
   An implementation of `async`/`await` for
-  [Mojolicious](https://mojolicious.org) based on
-  [Coro](https://metacpan.org/pod/Coro).
+  [Mojolicious](https://mojolicious.org) with an initial default implementation
+  based on [Coro](https://metacpan.org/pod/Coro).
 
 ```perl
 use Mojolicious::Lite -signatures;
