@@ -4,12 +4,13 @@ use Carp ();
 use Mojo::Loader;
 use Import::Into;
 
+my $backend = $ENV{MOJO_ASYNCAWAIT_BACKEND} // '+Coro';
+$backend =~ s/^\+/Mojo::AsyncAwait::Backend::/;
+if(my $e = Mojo::Loader::load_class($backend)) {
+  Carp::croak(ref $e ? $e : "Could not find backend $backend. Perhaps you need to install it?");
+}
+
 sub import {
-  my $backend = $ENV{MOJO_ASYNCAWAIT_BACKEND} // $_[1] // '+Coro';
-  $backend =~ s/^\+/Mojo::AsyncAwait::Backend::/;
-  if(my $e = Mojo::Loader::load_class($backend)) {
-    Carp::croak(ref $e ? $e : "Could not find backend $backend. Perhaps you need to install it?");
-  }
   $backend->import::into(scalar caller);
 }
 
@@ -93,16 +94,12 @@ backend implementations of Async/Await. The reason to use this module really
 would be to use current default implementation without regards to what that
 implementation is nor how it works.
 
-To determine the backend, when it is imported, the C<MOJO_ASYNCAWAIT_BACKEND>
-is checked, if that isn't present then any import argument is checked, and
-finally if neither of these are given, the current default is used.
+When it is loaded, the C<MOJO_ASYNCAWAIT_BACKEND> is checked, if not set then
+the current default is used.
 
   # From environment
   BEGIN{ $ENV{MOJO_ASYNCAWAIT_BACKEND} = '+CoolBackend' }
   use Mojo::AsyncAwait;
-
-  # From argument
-  use Mojo::AsyncAwait '+CoolBackend';
 
   # Currently provided default
   use Mojo::AsyncAwait;
