@@ -5,7 +5,6 @@ use Carp ();
 use Coro::State ();
 use Mojo::Util;
 use Mojo::Promise;
-use Scalar::Util ();
 use Sub::Util ();
 
 use Exporter 'import';
@@ -106,9 +105,7 @@ sub await (*) {
       unless $hints->{'Mojo::AsyncAwait::Backend::Coro/async'};
   }
 
-  my $promise = shift;
-  $promise = Mojo::Promise->new->resolve($promise)
-    unless Scalar::Util::blessed($promise) && $promise->can('then');
+  my $promise = Mojo::Promise->resolve($_[0]);
 
   my (@retvals, $err);
   _pop {
