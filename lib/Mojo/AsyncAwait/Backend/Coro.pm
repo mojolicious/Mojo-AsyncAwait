@@ -2,7 +2,7 @@ package Mojo::AsyncAwait::Backend::Coro;
 use Mojo::Base -strict;
 
 use Carp ();
-use Coro::State ();
+use CoroX::PushState;
 use Mojo::Util;
 use Mojo::Promise;
 use Sub::Util ();
@@ -11,42 +11,7 @@ use Exporter 'import';
 
 our @EXPORT = (qw/async await/);
 
-my $main = Coro::State->new;
-$main->{desc} = 'Mojo::AsyncAwait::Backend::Coro/$main';
-
-# LIFO stack of coroutines waiting to come back to
-# always has $main as the bottom of the stack
-my @stack = ($main);
-
-# Coroutines that are ostensible done but need someone to kill them
-my @clean;
-
-# _push adds a coroutine to the stack and enters it
-# when control returns to the original pusher, it will clean up
-# any coroutines that are waiting to be cleaned up
-
-sub _push {
-  push @stack, @_;
-  $stack[-2]->transfer($stack[-1]);
-  $_->cancel for @clean;
-  @clean = ();
-}
-
-# _pop pops the current coroutine off the stack. If given a callback, it calls
-# a callback on it, otherwise, schedules it for cleanup. It then transfers to
-# the next one on the stack. Note that it can't pop-and-return (which would
-# make more sense) because any action on it must happen before control is
-# transfered away from it
-
-sub _pop (;&) {
-  Carp::croak "Cannot leave the main thread"
-    if $stack[-1] == $main;
-  my ($cb) = @_;
-  my $current = pop @stack;
-  if ($cb) { $cb->($current)       }
-  else     { push @clean, $current }
-  $current->transfer($stack[-1]);
-}
+my $stack = CoroX::PushState->new;
 
 sub async {
   my $body   = pop;
@@ -67,15 +32,15 @@ sub async {
   my $wrapped = sub {
     my @caller  = caller;
     my $promise = Mojo::Promise->new;
-    my $coro    = Coro::State->new(sub {
+    my $state   = $stack->state(sub {
       eval {
         BEGIN { $^H{'Mojo::AsyncAwait::Backend::Coro/async'} = 1 }
         $promise->resolve($body->(@_)); 1
       } or $promise->reject($@);
-      _pop;
+      $stack->pop;
     }, @_);
-    $coro->{desc} = "$subname called at $caller[1] line $caller[2], $desc";
-    _push $coro;
+    $state->{desc} = "$subname called at $caller[1] line $caller[2], $desc";
+    $stack->push($state);
     return $promise;
   };
 
@@ -108,21 +73,21 @@ sub await (*) {
   my $promise = Mojo::Promise->resolve($_[0]);
 
   my (@retvals, $err);
-  _pop {
-    my $current = shift;
+  $stack->pop(sub {
+    my $state = shift;
     $promise->then(
       sub {
         @retvals = @_;
-        _push $current;
+        $stack->push($state);
       },
       sub {
         $err = shift;
-        _push $current;
+        $stack->push($state);
       }
     );
-  };
+  });
 
-  # "_push $current" in the above callback brings us here
+  # "$stack->push($state)" in the above callback brings us here
   Carp::croak($err) if $err;
   return wantarray ? @retvals : $retvals[0];
 }
