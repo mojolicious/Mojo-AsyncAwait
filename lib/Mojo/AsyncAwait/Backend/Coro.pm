@@ -78,15 +78,9 @@ sub await (*) {
   $stack->pop(sub {
     my $state = shift;
     $promise->then(
-      sub {
-        @retvals = @_;
-        $stack->push($state);
-      },
-      sub {
-        $err = shift;
-        $stack->push($state);
-      }
-    );
+      sub { @retvals = @_ },
+      sub { $err = shift  }
+    )->finally(sub { $stack->push($state) });
   });
 
   # "$stack->push($state)" in the above callback brings us here
