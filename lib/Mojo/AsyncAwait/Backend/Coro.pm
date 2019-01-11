@@ -32,15 +32,17 @@ sub async {
   my $wrapped = sub {
     my @caller  = caller;
     my $promise = Mojo::Promise->new;
-    my $state   = $stack->state(sub {
-      eval {
-        BEGIN { $^H{'Mojo::AsyncAwait::Backend::Coro/async'} = 1 }
-        $promise->resolve($body->(@_)); 1
-      } or $promise->reject($@);
-      $stack->pop;
-    }, @_);
-    $state->{desc} = "$subname called at $caller[1] line $caller[2], $desc";
-    $stack->push($state);
+    $stack->push(
+      "$subname called at $caller[1] line $caller[2], $desc",
+      sub {
+        eval {
+          BEGIN { $^H{'Mojo::AsyncAwait::Backend::Coro/async'} = 1 }
+          $promise->resolve($body->(@_)); 1
+        } or $promise->reject($@);
+        $stack->pop;
+      },
+      @_
+    );
     return $promise;
   };
 

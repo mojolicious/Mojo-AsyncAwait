@@ -5,6 +5,7 @@ use warnings;
 
 use Carp ();
 use Coro::State ();
+use Scalar::Util ();
 
 my $main = Coro::State->new;
 $main->{desc} = 'CoroX::PushState main';
@@ -24,10 +25,22 @@ sub new {
 # when control returns to the original pusher, it will clean up
 # any coroutines that are waiting to be cleaned up
 
+my $isa = sub { Scalar::Util::blessed($_[0]) && $_[0]->isa($_[1]) };
+
 sub push {
   my $self = shift;
   my ($stack, $clean) = @{$self}{qw/stack clean/};
-  push @$stack, @_;
+
+  my $state;
+  if ($_[0]->$isa('Coro::State')) {
+    $state = shift;
+  } else {
+    my $desc = ref $_[0] ? undef : shift;
+    $state = Coro::State->new(@_);
+    $state->{desc} = $desc if defined $desc;
+  }
+
+  push @$stack, $state;
   $stack->[-2]->transfer($stack->[-1]);
   $_->cancel for @$clean;
   @$clean = ();
@@ -50,8 +63,6 @@ sub pop {
   else     { CORE::push @$clean, $current }
   $current->transfer($stack->[-1]);
 }
-
-sub state { shift; Coro::State->new(@_) }
 
 1;
 
