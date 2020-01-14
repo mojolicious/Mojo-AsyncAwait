@@ -1,3 +1,5 @@
+0.02  2020-01-14
+  - PromiseActions isn't needed as of Mojo 8.28
 
 0.01  2018-11-17
   - Initial release.

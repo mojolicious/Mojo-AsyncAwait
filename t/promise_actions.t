@@ -6,6 +6,10 @@ use Mojo::AsyncAwait;
 use Test::More;
 use Test::Mojo;
 
+if (Mojolicious->VERSION(8.28)) {
+  plan skip_all => 'Mojolicious 8.28+ handles PromiseActions in core';
+}
+
 # specifically use development mode for the exception page
 app->mode('development');
 

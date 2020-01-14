@@ -4,7 +4,7 @@ use Carp ();
 use Mojo::Loader;
 use Import::Into;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 my $backend = $ENV{MOJO_ASYNCAWAIT_BACKEND} // '+Coro';
 $backend =~ s/^\+/Mojo::AsyncAwait::Backend::/;
@@ -52,9 +52,10 @@ This pattern simplies the use of both promises and nonblocking code in general
 and is therefore a very exciting development for writing asynchronous systems.
 
 If you are going to use this module to create async controllers actions in
-L<Mojolicious> applications (as seen in the L</SYNOPSIS>), you are highly
-encouraged to also use L<Mojolicious::Plugin::PromiseActions> in order to
-properly handle exceptions in your action.
+L<Mojolicious> applications (as seen in the L</SYNOPSIS>) before Mojolicious
+version 8.28, you are highly encouraged to also use
+L<Mojolicious::Plugin::PromiseActions> in order to properly handle exceptions
+in your action.
 
 =head1 GOALS
 
