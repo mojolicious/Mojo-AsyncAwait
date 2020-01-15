@@ -6,7 +6,7 @@ use Mojo::AsyncAwait;
 use Test::More;
 use Test::Mojo;
 
-if (Mojolicious->VERSION(8.28)) {
+if (eval{ Mojolicious->VERSION(8.28); 1}) {
   plan skip_all => 'Mojolicious 8.28+ handles PromiseActions in core';
 }
 

@@ -1,5 +1,8 @@
-0.02  2020-01-14
+0.03 2020-01-15
+  - Fix the test that was broken on Mojo <= 8.27 (sigh)
+
+0.02 2020-01-14
   - PromiseActions isn't needed as of Mojo 8.28
 
-0.01  2018-11-17
+0.01 2018-11-17
   - Initial release.
