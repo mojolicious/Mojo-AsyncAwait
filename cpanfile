@@ -1,7 +1,5 @@
-requires 'Mojolicious', '7.66'; # good promises
-requires 'Coro';
-requires 'Sub::Util', '1.41'; # set_subname
-requires 'Import::Into';
+requires 'Mojolicious', '8.33'; # Mojo needs Future::AsyncAwait 0.36 here
+requires 'Future::AsyncAwait', '0.36';
 
 test_requires 'Test::Lib';
 

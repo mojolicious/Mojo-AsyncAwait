@@ -18,11 +18,9 @@ sub answer {
 my $ticker = ticker();
 
 my $answer;
-my $body = sub { $answer = await answer() };
-async doit => $body;
+async sub doit { $answer = await answer() }
 
 my $package = __PACKAGE__;
-is subname($body), "${package}::__ASYNCBODY__(doit)", 'correct body name';
 is subname(\&doit), "${package}::doit", 'correct sub name';
 
 doit()->wait;

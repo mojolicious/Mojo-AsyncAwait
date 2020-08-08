@@ -16,7 +16,7 @@ sub double {
 my $ticker = ticker(0);
 
 my $answer;
-async(sub { $answer = await double(21) })->()->wait;
+(async sub { $answer = await double(21) })->()->wait;
 
 is $answer, 42, 'got expected answer';
 ok $ticker->(), 'got at least one tick';
