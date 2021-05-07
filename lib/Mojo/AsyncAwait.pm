@@ -187,7 +187,8 @@ method), it will be wrapped in a Mojo::Promise for consistency. This is mostly
 inconsequential to the user.
 
 Note that await can only take one promise as an argument. If you wanted to
-await multiple promises you probably want L<Mojo::Promise/all>, L<Mojo::Promise/all_settled>, L<Mojo::Promise/any>, or L<Mojo::Promise/race>.
+await multiple promises you probably want L<Mojo::Promise/all>,
+L<Mojo::Promise/all_settled>, L<Mojo::Promise/any>, or L<Mojo::Promise/race>.
 
   my $results = await Mojo::Promise->all(@promises);
 
