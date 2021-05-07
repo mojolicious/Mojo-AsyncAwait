@@ -1,7 +1,7 @@
 package Mojo::AsyncAwait::Backend::Coro;
 use Mojo::Base -strict;
 
-use Carp ();
+use Carp        ();
 use Coro::State ();
 use Mojo::Util;
 use Mojo::Promise;
@@ -39,12 +39,11 @@ sub _push {
 # transfered away from it
 
 sub _pop (;&) {
-  Carp::croak "Cannot leave the main thread"
-    if $stack[-1] == $main;
+  Carp::croak "Cannot leave the main thread" if $stack[-1] == $main;
   my ($cb) = @_;
   my $current = pop @stack;
-  if ($cb) { $cb->($current)       }
-  else     { push @clean, $current }
+  if   ($cb) { $cb->($current) }
+  else       { push @clean, $current }
   $current->transfer($stack[-1]);
 }
 
@@ -56,7 +55,7 @@ sub async {
   my $subname  = "$caller[0]::__ASYNCSUB__";
   my $bodyname = "$caller[0]::__ASYNCBODY__";
   if (defined(my $name = $opts->{-name})) {
-    $subname  = $opts->{-install} ? "$caller[0]::$name" : "$subname($name)";
+    $subname = $opts->{-install} ? "$caller[0]::$name" : "$subname($name)";
     $bodyname .= "($name)";
   }
   my $desc = "declared at $caller[1] line $caller[2]";
@@ -67,13 +66,17 @@ sub async {
   my $wrapped = sub {
     my @caller  = caller;
     my $promise = Mojo::Promise->new;
-    my $coro    = Coro::State->new(sub {
-      eval {
-        BEGIN { $^H{'Mojo::AsyncAwait::Backend::Coro/async'} = 1 }
-        $promise->resolve($body->(@_)); 1
-      } or $promise->reject($@);
-      _pop;
-    }, @_);
+    my $coro    = Coro::State->new(
+      sub {
+        eval {
+          BEGIN { $^H{'Mojo::AsyncAwait::Backend::Coro/async'} = 1 }
+          $promise->resolve($body->(@_));
+          1;
+        } or $promise->reject($@);
+        _pop;
+      },
+      @_
+    );
     $coro->{desc} = "$subname called at $caller[1] line $caller[2], $desc";
     _push $coro;
     return $promise;
@@ -91,7 +94,7 @@ sub async {
 # this prototype prevents the perl tokenizer from seeing await as an
 # indirect method
 
-sub await (*) {
+sub await (*;*) {
   {
     # check that our caller is actually an async function
     no warnings 'uninitialized';
@@ -123,16 +126,20 @@ sub await (*) {
   };
 
   # "_push $current" in the above callback brings us here
-  Carp::croak($err) if $err;
+  if ($err) {
+    if (defined $_[1] && ref $_[1] eq 'SCALAR') {
+      ${$_[1]} = $err;
+    }
+    else {
+      die "$err\n";   # Carp::croak($err) may leak too much internal information
+    }
+  }
   return wantarray ? @retvals : $retvals[0];
 }
 
 sub _parse_opts {
   return {} unless @_;
-  return {
-    -name    => shift,
-    -install => 1,
-  } if @_ == 1;
+  return {-name => shift, -install => 1,} if @_ == 1;
 
   my %opts = @_;
   Carp::croak 'Cannot install a sub without a name'
