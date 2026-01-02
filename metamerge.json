@@ -12,5 +12,6 @@
          "web" : "http://github.com/mojolicious/Mojo-AsyncAwait/issues"
       },
       "license" : [ "http://dev.perl.org/licenses/" ]
-   }
+   },
+   "x_deprecated": 1
 }

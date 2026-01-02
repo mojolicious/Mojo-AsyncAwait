@@ -41,6 +41,14 @@ Mojo::AsyncAwait - An Async/Await implementation for Mojolicious
 
   app->start;
 
+=head1 OBSOLETED
+
+Async/await functionality is now built into L<Mojolicious> since version 8.32
+by passing the C<-async_await> flag to L<Mojo::Base>. This is implemented via
+the L<public interface|Future::AsyncAwait::Awaitable> of L<Future::AsyncAwait>,
+an async/await keyword currently in active development in coordination with
+core Perl.
+
 =head1 DESCRIPTION
 
 Async/await is a language-independent pattern that allows nonblocking
